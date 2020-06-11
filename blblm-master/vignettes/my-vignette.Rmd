@@ -1,0 +1,81 @@
+---
+title: "my-vignette"
+output: rmarkdown::html_vignette
+author: "haoyu ren"
+vignette: >
+  %\VignetteIndexEntry{my-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(blblm)
+```
+
+Work have done
+
+# Basic package typo/bug fix
+  added parameters and corresponding documentations for functions:
+      For examples:
+      Added  #' @param formula object of formula
+```{r}      
+#' @param data dataset
+#' @param n sample size
+#' @param B bootstrap size
+#' @param cpu number of cpu for function lm_each_subsample
+
+#' compute the regression estimates for a blb dataset
+#' @param formula object of formula
+#' @param data a data set
+#' @param n overall sample size for function lm_each_boot
+```
+Added import codes to library needed packages:
+	For examples:
+	Added
+```{r}	
+#' @import parallel
+#' @importFrom utils capture.output
+#' @importFrom utils read.csv
+```
+
+# Promotions
+	Added parameter “CPU” as cluster input , users are able to choose the number of CPUs they want to be operated.
+		For examples:
+
+```{r,eval=FALSE}
+lm_each_subsample <- function(formula, data, n, B, cpu) {
+# add parallel
+cl <- makeCluster(cpu)
+#replicate(B, lm_each_boot(formula, data, n), simplify = FALSE)
+clusterExport(cl, c("lm_each_boot", "lm1", "data"))
+result <- parLapply(cl, 1:B, function(x){
+  lm_each_boot(formula, data, nrow(data))
+})
+stopCluster(cl)
+return(result)
+```
+	
+	Added map & if statement to realize that users are able to specify a list of file of datasets rather than loading the whole dataset. If the users put a list of files to be read as parameter, it will automatically contain the data sets into a list.
+For examples:
+```{r,eval=FALSE}
+		 if (is.data.frame(data)){
+ 	 data_list <- split_data(data, m)
+ } else {
+    		data_list <- map(data, function(x) read.csv(x))
+ }
+```
+Added a test. Testing whether the output belongs to class “blblm”
+[check() won’t pass after adding this test, the single test() works good, i didn’t solve this problem so I didn’t put the test in the package]
+```{r,eval = FALSE}
+	test_that("multiplication works", {
+model_fit <- blblm(speed~dist, data = cars, B=100)
+expect_equal(class(model_fit), "blblm")
+})
+```
